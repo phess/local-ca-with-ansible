@@ -1,0 +1,35 @@
+---
+- name: Generate the local persistent CA intermediate certificate
+  hosts: localhost
+  vars:
+    ### Local (persistent) CA vars
+    # Location
+    local_ca_path: "~/tmp/local-CA-by-ansible"
+
+    ### Cert vars
+    # CA common name inside the cert
+    server_cn: '{{ ca_cname | default("Intermediate CA #1") }}'
+    # CA cert file to create
+    cert_file: '{{ local_ca_path }}/intermediate-ca/{{ server_cn | regex_replace("[^a-zA-Z0-9]+", "_") }}.crt'
+    # Overwrite cert file if it exists
+    replace_cert_if_exists: '{{ overwrite | default(False) }}'
+    
+    ### Private key vars
+    # Private key file to create
+    key_file: '{{ cert_file | regex_replace(".crt$", ".key") }}'
+    # Overwrite keyfile if it exists
+    replace_key_if_exists: '{{ overwrite | default(False) }}'
+    
+    ### Mandatory CA vars
+    is_ca: true
+    is_server: false
+    is_client: false
+
+    # Cert is NOT self-signed but signed by the root CA
+    self_sign: false
+    # CA private key and cert files are the root CA's
+    local_ca_cert_file: '{{ local_ca_path }}/root-ca/root-ca.crt'
+    local_ca_key_file: '{{ local_ca_path }}/root-ca/root-ca.key'
+
+  roles:
+    - create_cert_generic

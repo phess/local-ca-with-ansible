@@ -1,0 +1,36 @@
+---
+### Based on https://docs.ansible.com/ansible/latest/collections/community/crypto/docsite/guide_ownca.html
+- name: Do we have a cert in place already?
+  ansible.builtin.stat:
+    path: "{{ root_ca_cert_file }}"
+  register:
+    cert_stat
+
+- name: Stop now if cert exists
+  ansible.builtin.fail:
+    msg: "CA cert already exists at {{ root_ca_cert_file }}"
+  when: cert_stat.stat.exists and not replace_if_exists
+
+- name: Create CSR for the CA certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "{{ root_ca_key_file }}"
+    #privatekey_passphrase: "{{ root_ca_key_passphrase | default('', False) }}"
+    common_name: "{{ root_ca_cn | default('My small CA') }}"
+    use_common_name_for_san: false
+    basic_constraints:
+      - 'CA:TRUE'
+    basic_constraints_critical: true
+    key_usage:
+      - keyCertSign
+    key_usage_critical: true
+  register: root_ca_csr
+
+- name: Generate the self-signed root CA cert from CSR
+  community.crypto.x509_certificate:
+    backup: true
+    path: "{{ root_ca_cert_file }}"
+    privatekey_path: "{{ root_ca_key_file }}"
+    csr_content: "{{ root_ca_csr.csr }}"
+    provider: selfsigned
+    mode: 'u=rw,g=-,o=-'
+    

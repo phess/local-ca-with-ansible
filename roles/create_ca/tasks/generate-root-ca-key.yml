@@ -1,0 +1,49 @@
+---
+### Based on https://docs.ansible.com/ansible/latest/collections/community/crypto/docsite/guide_ownca.html
+- name: Do we have a key already?
+  ansible.builtin.stat:
+    path: "{{ root_ca_key_file }}"
+  register: key_stat
+
+- name: Set current key status
+  ansible.builtin.set_fact:
+    root_ca_key_exists: "{{ key_stat.stat.exists }}"
+    root_ca_key:
+      file: "{{ root_ca_key_file }}"
+      exists: "{{ key_stat.stat.exists }}"
+      stat: "{{ key_stat.stat }}"
+      created_or_exists: "{% if key_stat.stat.exists %}exists{% else %}created{% endif %}"
+
+- name: "Ensure {{ root_ca_dir }} exists"
+  ansible.builtin.file:
+    path: "{{ root_ca_dir }}"
+    state: directory
+
+- name: Generate a key if none exists
+  when: not root_ca_key.exists
+  no_log: false
+  community.crypto.openssl_privatekey:
+    # Always careful
+    backup: yes
+    force: no
+    # Encrypt?
+    passphrase: "{{ root_ca_key_passphrase | default('', False) }}"
+    # Where?
+    path: "{{ root_ca_key_file }}"
+    # Allow deep tweaking; values below are the defaults and can be removed.
+    curve: "{{ root_ca_key_curve | default('secp256r1') }}"
+    format: "{{ root_ca_key_format | default('auto_ignore') }}"
+    # Key generation parameters
+    size: "{{ root_ca_key_size | default(4096) }}"
+    type: "{{ root_ca_key_type | default('RSA') }}"
+    # Docs say this "must be auto".
+    cipher: auto
+    
+- name: Fix root CA key permissions and ownership
+  ansible.builtin.file:
+    path: "{{ root_ca_key_file }}"
+    mode: 'g=-,o=-'
+    
+- name: Report
+  ansible.builtin.debug:
+    msg: "Root CA private key {{ root_ca_key.created_or_exists }} at {{ root_ca_key_file }}"

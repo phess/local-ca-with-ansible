@@ -1,0 +1,38 @@
+---
+- name: Generate one-off self-signed server cert
+  hosts: localhost
+  vars:
+    ### Cert vars
+    # CA cert file to create
+    cert_file: '{{ server_cert | default("~/self-signed-server.crt") }}'
+    # CA common name inside the cert
+    server_cn: '{{ server_cname | default("this-server.example.net") }}'
+    # Overwrite cert file if it exists
+    replace_cert_if_exists: '{{ overwrite | default(True) }}'
+    # Alternative names (DO NOT forget to prepend ``DNS:'' to each entry)
+    san_entries:
+      - DNS:wonder-phul.example.net
+      - DNS:wonder-phul.example.org
+
+    ### Private key vars
+    # Private key file to create
+    key_file: '{{ server_key | default("~/self-signed-server.key") }}'
+    # Overwrite keyfile if it exists
+    replace_key_if_exists: '{{ overwrite | default(True) }}'
+    
+    ### Mandatory CA vars
+    is_ca: true
+    is_server: true
+    is_client: false
+
+    ### Mandatory one-off CA vars
+    # Cert's private key
+    privatekey_path: '{{ key_file }}'
+    # Cert is self-signed
+    self_sign: true
+    # CA private key and cert files are the same as the cert's
+    local_ca_cert_file: '{{ cert_file }}'
+    local_ca_key_file: '{{ key_file }}'
+
+  roles:
+    - create_cert_generic

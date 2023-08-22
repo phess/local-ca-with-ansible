@@ -1,0 +1,11 @@
+---
+
+### Include vars first
+- include_vars: main.yml
+
+- import_tasks: generate-private-key.yml
+  tags: generate-private-key
+
+- import_tasks: generate-and-sign-cert.yml
+  tags: generate-server-cert
+

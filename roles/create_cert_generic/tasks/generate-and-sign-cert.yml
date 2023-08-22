@@ -1,0 +1,72 @@
+---
+### Based on https://docs.ansible.com/ansible/latest/collections/community/crypto/docsite/guide_ownca.html
+- name: Do we have a cert in place already?
+  ansible.builtin.stat:
+    path: "{{ cert_file }}"
+  register:
+    cert_file_stat
+
+- name: Stop now if cert exists
+  ansible.builtin.fail:
+    msg: "Cert file already exists at {{ cert_file }}"
+  when: cert_file_stat.stat.exists and not replace_cert_if_exists
+
+- name: "Ensure directory {{ cert_file | ansible.builtin.dirname }} exists"
+  ansible.builtin.file:
+    path: "{{ cert_file | ansible.builtin.dirname }}"
+    state: directory
+
+- name: Create CSR for the certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: '{{ key_file }}'
+    basic_constraints:
+      - 'CA:{{ is_ca | default(False) | upper }}'
+    common_name: '{{ server_cn | default("my-server.example.com") if is_server or is_client else server_cn | default("My CA") }}'
+    use_common_name_for_san: "{{ is_server or is_client }}"
+    subject_alt_name: "{{ san_entries | default(omit) }}"
+    basic_constraints_critical: true
+    basic_constraints:
+      - 'CA:{{ is_ca | default(False) | upper }}'
+    key_usage_critical: true
+    key_usage: >
+      [
+        "digitalSignature",
+        {% if is_ca %}
+          "keyEncipherment",
+        {% endif %}
+      ]
+    extended_key_usage: >
+      [
+        "clientAuth",
+        {% if is_server or is_ca %}
+          "serverAuth"
+        {% endif %}
+      ]
+  register: csr
+
+- name: Generate a self-signed cert from CSR
+  community.crypto.x509_certificate:
+    backup: true
+    path: "{{ cert_file }}"
+    privatekey_path: "{{ key_file }}"
+    csr_content: "{{ csr.csr }}"
+    provider: selfsigned
+    mode: 'u=rw,g=-,o=-'
+  when: self_sign
+
+- name: Sign CSR into cert using CA
+  community.crypto.x509_certificate_pipe:
+    csr_content: "{{ csr.csr }}"
+    provider: ownca
+    ownca_path: "{{ local_ca_cert_file }}"
+    ownca_privatekey_path: "{{ local_ca_key_file }}"
+    #ownca_privatekey_passphrase: "{{ secret_ca_passphrase }}"
+    ownca_not_after: +365d  # valid for one year
+    ownca_not_before: "-1d"  # valid since yesterday
+  register: certificate
+
+- name: "Write certificate file to {{ cert_file }}"
+  ansible.builtin.copy:
+    dest: "{{ cert_file }}"
+    content: "{{ certificate.certificate }}"
+

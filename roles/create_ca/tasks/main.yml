@@ -1,0 +1,13 @@
+---
+
+### Include vars first
+- include_vars: main.yml
+
+- import_tasks: generate-root-ca-key.yml
+  tags: generate-root-ca-key
+
+- import_tasks: generate-root-ca-cert.yml
+  tags: generate-root-ca-cert
+
+- import_tasks: generate-intermediate-ca-cert.yml
+  when: generate_intermediate
