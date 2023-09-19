@@ -1,0 +1,33 @@
+---
+# The tasks in this file have the goal of building the
+# CA-related variables for picking the correct CA
+# i.e. root or some existing intermediate CA, based on
+# the chosen CA.
+
+- name: Choose the root CA if ca_is_root = true
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    issuer_ca_cert_file: '{{ root_ca_cert_file }}'
+    issuer_ca_key_file: '{{ root_ca_key_file }}'
+  when: ca_is_root
+
+- name: Derive intermediate CA name for path
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    intermediate_ca_name_in_path: '{{ issuer_ca_name | regex_replace("[^a-zA-Z0-9]+", "_") }}'
+  when: not ca_is_root
+
+- name: Locate intermediate CA dir from derived name
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    issuer_ca_dir: '{{ ( intermediate_cas_dir, intermediate_ca_name_in_path) | path_join }}'
+  when: not ca_is_root and not intermediate_ca_name_in_path.isblank()
+    
+- name: Determine intermediate CA cert and key files
+  delegate_to: localhost
+  ansible.builtin.set_fact:
+    issuer_ca_cert_file: '{{ ( issuer_ca_dir, intermediate_ca_name_in_path) | path_join + ".crt"}}'
+    issuer_ca_key_file:  '{{ ( issuer_ca_dir, intermediate_ca_name_in_path) | path_join + ".key"}}'
+  when: not ca_is_root and issuer_ca_dir is defined
+
+

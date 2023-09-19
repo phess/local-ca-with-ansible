@@ -1,0 +1,7 @@
+---
+### This task file generates a multi-cert PEM-formatted file containing the full CA chain bundle for a given server or client cert.
+
+- name: Grab my issuer CA's PEM contents
+  ansible.builtin.set_fact:
+    my_pem_file: "{{ 
+  

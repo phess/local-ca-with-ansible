@@ -3,11 +3,34 @@
 ### Include vars first
 - include_vars: main.yml
 
-- import_tasks: generate-root-ca-key.yml
-  tags: generate-root-ca-key
+- import_role:
+    name: create_cert_generic
+    vars_from: local-ca-new-root.yml
+    tasks_from: find-chosen-ca.yml
 
-- import_tasks: generate-root-ca-cert.yml
-  tags: generate-root-ca-cert
+- import_role:
+    name: create_cert_generic
+    vars_from: local-ca-new-root.yml
+    tasks_from: derive-basic-variables.yml
 
-- import_tasks: generate-intermediate-ca-cert.yml
-  when: generate_intermediate
+
+### Replaced with the next task
+#- import_tasks: generate-root-ca-key.yml
+#  tags: generate-root-ca-key
+
+- import_role:
+    name: create_cert_generic
+    vars_from: local-ca-new-root.yml
+    tasks_from: generate-private-key.yml
+
+### Replaced with the next task
+#- import_tasks: generate-root-ca-cert.yml
+#  tags: generate-root-ca-cert
+
+- import_role:
+    name: create_cert_generic
+    vars_from: local-ca-new-root.yml
+    tasks_from: generate-and-sign-cert.yml
+
+
+

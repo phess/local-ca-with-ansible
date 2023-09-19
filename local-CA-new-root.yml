@@ -1,37 +1,7 @@
 ---
 - name: Generate the local persistent CA root certificate
-  hosts: localhost
+  hosts: ca_server
   vars:
-    ### Local (persistent) CA vars
-    # Location
-    local_ca_path: "~/tmp/local-CA-by-ansible"
-
-    ### Cert vars
-    # CA common name inside the cert
-    server_cn: '{{ ca_cname | default("My one-off CA") }}'
-    # CA cert file to create
-    cert_file: '{{ local_ca_path }}/root-ca/root-ca.crt'
-    # Overwrite cert file if it exists
-    replace_cert_if_exists: '{{ overwrite | default(False) }}'
-    
-    ### Private key vars
-    # Private key file to create
-    key_file: '{{ cert_file | regex_replace(".crt$", ".key") }}'
-    # Overwrite keyfile if it exists
-    replace_key_if_exists: '{{ overwrite | default(False) }}'
-    
-    ### Mandatory CA vars
-    is_ca: true
-    is_server: false
-    is_client: false
-
-    # Cert's private key
-    #privatekey_path: '{{ key_file }}'
-    # Cert is self-signed
-    self_sign: true
-    # CA private key and cert files are the same as the cert's
-    local_ca_cert_file: '{{ cert_file }}'
-    local_ca_key_file: '{{ key_file }}'
-
+    ca_is_root: yes
   roles:
-    - create_cert_generic
+    - create_ca

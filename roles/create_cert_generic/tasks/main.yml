@@ -2,6 +2,10 @@
 
 ### Include vars first
 - include_vars: main.yml
+  tags: always
+
+- import_tasks: derive-basic-variables.yml
+  tags: always
 
 - import_tasks: generate-private-key.yml
   tags: generate-private-key

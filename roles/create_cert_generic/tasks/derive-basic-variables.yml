@@ -1,0 +1,42 @@
+---
+### This task file sets absolutely basic variables such as:
+###   - final certificate file name
+###   - final key file name
+
+- name: Set cert file name
+  ansible.builtin.set_fact:
+    cert_name_for_file: "{{ server_cn | regex_replace('[^a-zA-Z0-9-.]+', '_') }}"
+  when: not self_sign
+
+- name: Set cert file name of "root-ca" for the root CA
+  ansible.builtin.set_fact:
+    cert_name_for_file: root-ca
+  when: is_ca and self_sign
+
+## Below 3 tasks are either-or for 3 different scenarios:
+# 1. non-CA certs
+# 2. intermediate CA certs
+# 3. root CA certs
+
+- name: Set cert file dir for non-CA certs
+  ansible.builtin.set_fact:
+    server_cert_dir: "{{ ( local_ca_dir, 'certs', cert_name_for_file ) | path_join }}"
+  when: not is_ca
+
+- name: Set cert file dir for intermediate CA certs
+  ansible.builtin.set_fact:
+    server_cert_dir: "{{ ( local_ca_dir, 'intermediates', cert_name_for_file ) | path_join }}"
+  when: is_ca and not self_sign
+
+- name: Set cert file dir for root CA certs
+  ansible.builtin.set_fact:
+    server_cert_dir: "{{ local_ca_dir }}/root-ca"
+  when: is_ca and self_sign
+
+## End of either-or scenarios.
+
+- name: Set cert file location and key location
+  ansible.builtin.set_fact:
+    server_cert_file: "{{ ( server_cert_dir, cert_name_for_file ) | path_join + '.crt' }}"
+    server_key_file:  "{{ ( server_cert_dir, cert_name_for_file ) | path_join + '.key' }}"
+

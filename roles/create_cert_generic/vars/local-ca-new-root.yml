@@ -1,0 +1,32 @@
+### Local (persistent) CA vars
+# -- NOTE: This will usually be defined in the [all:vars] section of the *-ca.conf file.
+# Location
+# local_ca_path: "~/tmp/local-CA-by-ansible"
+
+### Cert vars
+# CA common name inside the cert
+server_cn: '{{ ca_cname | default("My one-off CA " + ansible_date_time.date) }}'
+# CA cert file to create
+cert_file: '{{ server_cert_file }}'
+# Overwrite cert file if it exists
+replace_cert_if_exists: '{{ overwrite | default(False) }}'
+
+### Private key vars
+# Private key file to create
+key_file: '{{ server_key_file }}'
+# Overwrite keyfile if it exists
+replace_key_if_exists: '{{ overwrite | default(False) }}'
+
+### Mandatory CA vars
+is_ca: true
+is_server: false
+is_client: false
+
+# Cert's private key
+#privatekey_path: '{{ key_file }}'
+# Cert is self-signed
+self_sign: true
+# CA private key and cert files are the same as the cert's
+#local_ca_cert_file: '{{ cert_file }}'
+#local_ca_key_file: '{{ key_file }}'
+

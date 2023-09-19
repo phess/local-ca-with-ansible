@@ -32,7 +32,8 @@
     ###  local_ca_cert_from_root:
     ###    - intermediate_1   (these are CA cnames that will need to be looked up inside each existing intermediate CA)
     ###      - intermediate_2   (intermediate_2 is signed by intermediate_1 who is signed by the root CA)
-    local_ca_cert_file: '{{ local_ca_path }}/intermediate-ca/First_intermediate_CA.crt'
+    #local_ca_cert_file: '{{ local_ca_path }}/intermediate-ca/First_intermediate_CA.crt'
+    local_ca_cert_file: '{{ local_ca_path }}/root-ca/root-ca.crt'
     local_ca_key_file: '{{ local_ca_cert_file | regex_replace(".crt$", ".key") }}'
 
   roles:
