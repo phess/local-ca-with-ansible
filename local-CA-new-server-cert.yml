@@ -1,40 +1,6 @@
 ---
 - name: Generate a new server cert signed by a local persistent CA
-  hosts: localhost
-  vars:
-    ### Local (persistent) CA vars
-    # Location
-    local_ca_path: "~/tmp/local-CA-by-ansible"
-
-    ### Cert vars
-    # Common name inside the cert
-    server_cn: '{{ server_cname | default("my-server-fqdn.example.com") }}'
-    # Cert file to create
-    cert_file: '{{ local_ca_path }}/certs/{{ server_cn }}/{{ server_cn }}.crt'
-    # Overwrite cert file if it exists
-    replace_cert_if_exists: '{{ overwrite | default(False) }}'
-    
-    ### Private key vars
-    # Private key file to create
-    key_file: '{{ cert_file | regex_replace(".crt$", ".key") }}'
-    # Overwrite keyfile if it exists
-    replace_key_if_exists: '{{ overwrite | default(False) }}'
-    
-    ### Mandatory CA vars
-    is_ca: false
-    is_server: true
-    is_client: false
-
-    # Cert is NOT self-signed but signed by the CA below
-    self_sign: false
-    # CA private key and cert files are the root CA's
-    ### IDEA: force a hierarchical list to show intermediates:
-    ###  local_ca_cert_from_root:
-    ###    - intermediate_1   (these are CA cnames that will need to be looked up inside each existing intermediate CA)
-    ###      - intermediate_2   (intermediate_2 is signed by intermediate_1 who is signed by the root CA)
-    #local_ca_cert_file: '{{ local_ca_path }}/intermediate-ca/First_intermediate_CA.crt'
-    local_ca_cert_file: '{{ local_ca_path }}/root-ca/root-ca.crt'
-    local_ca_key_file: '{{ local_ca_cert_file | regex_replace(".crt$", ".key") }}'
-
+  hosts: ca_server
   roles:
-    - create_cert_generic
+    - issue_server_cert
+

@@ -16,14 +16,47 @@
     path: "{{ cert_file | ansible.builtin.dirname }}"
     state: directory
 
+- name: Convert SAN entry string to list
+  ansible.builtin.set_fact:
+    san_entries_as_list: "{{ san_entries.split(',') |default([]) }}"
+  when: san_entries |type_debug in ("AnsibleUnicode", "str") and ( is_server or is_client )
+
+- ansible.builtin.set_fact:
+    san_entries_as_list: "{{ san_entries | default([]) }}"
+  when: san_entries |type_debug == "list" and ( is_server or is_client )
+
+- name: Convert Server CN entry to list for later combining into SAN entry list
+  ansible.builtin.set_fact:
+    server_cn_as_list:
+      - "DNS:{{ server_cn }}"
+  when: is_server or is_client
+
+- name: Ensure server_cn is in SAN list
+  ansible.builtin.set_fact:
+    san_entries_as_list: "{{ san_entries_as_list | union(server_cn_as_list) | unique}}"
+  when: is_server or is_client
+
+- debug:
+    var: san_entries_as_list
+
+- name: Turn san_entries into string from list
+  ansible.builtin.set_fact:
+    san_entries_as_string: "{{ ','.join(san_entries_as_list) }}"
+  when: is_server or is_client
+
+- debug:
+    var: san_entries_as_string
+
+
 - name: Create CSR for the certificate
   community.crypto.openssl_csr_pipe:
     privatekey_path: '{{ server_key_file }}'
     basic_constraints:
       - 'CA:{{ is_ca | default(False) | upper }}'
     common_name: '{{ server_cn | default("my-server.example.com") if is_server or is_client else server_cn | default("My CA") }}'
-    use_common_name_for_san: "{{ is_server or is_client }}"
-    subject_alt_name: "{{ san_entries | default(omit) }}"
+    ## Commenting this out as it causes subject_alt_name to be overwritten with ONLY the contents of common_name.
+    #use_common_name_for_san: "{{ is_server or is_client }}"
+    subject_alt_name: "{{ san_entries_as_string | default(omit) }}"
     basic_constraints_critical: true
     basic_constraints:
       - 'CA:{{ is_ca | default(False) | upper }}'

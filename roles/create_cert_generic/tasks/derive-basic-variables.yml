@@ -20,7 +20,7 @@
 
 - name: Set cert file dir for non-CA certs
   ansible.builtin.set_fact:
-    server_cert_dir: "{{ ( local_ca_dir, 'certs', cert_name_for_file ) | path_join }}"
+    server_cert_dir: "{{ ( local_ca_dir, 'certs' ) | path_join }}"
   when: not is_ca
 
 - name: Set cert file dir for intermediate CA certs
@@ -30,7 +30,7 @@
 
 - name: Set cert file dir for root CA certs
   ansible.builtin.set_fact:
-    server_cert_dir: "{{ local_ca_dir }}/root-ca"
+    server_cert_dir: "{{ local_ca_dir }}/{{ root_ca_dir_name }}"
   when: is_ca and self_sign
 
 ## End of either-or scenarios.

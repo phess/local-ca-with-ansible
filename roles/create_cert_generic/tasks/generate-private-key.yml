@@ -1,20 +1,21 @@
 ---
+
 ### Based on https://docs.ansible.com/ansible/latest/collections/community/crypto/docsite/guide_ownca.html
 - name: Do we have a key already?
   ansible.builtin.stat:
-    path: "{{ key_file }}"
+    path: "{{ server_key_file }}"
   register: key_file_stat
 
-- name: "Stop now if key exists at {{ key_file }}"
+- name: "Stop now if key exists at {{ server_key_file }}"
   ansible.builtin.fail:
-    msg: "Private key exists already at {{ key_file }}"
-  when: key_file_stat.stat.exists and not replace_key_if_exists
+    msg: "Private key exists already at {{ server_key_file }}"
+  when: key_file_stat.stat.exists and not ( replace_key_if_exists or use_existing_key )
 
 - name: Set current private key status
   ansible.builtin.set_fact:
     key_file_exists: "{{ key_file_stat.stat.exists }}"
     private_key:
-      file: "{{ key_file }}"
+      file: "{{ server_key_file }}"
       exists: "{{ key_file_stat.stat.exists }}"
       stat: "{{ key_file_stat.stat }}"
       status: >
@@ -26,9 +27,9 @@
           exists
         {% endif %}
 
-- name: "Ensure directory {{ key_file | ansible.builtin.dirname }} exists"
+- name: "Ensure directory {{ server_cert_dir }} exists"
   ansible.builtin.file:
-    path: "{{ key_file | ansible.builtin.dirname }}"
+    path: "{{ server_cert_dir }}"
     state: directory
 
 - name: Generate a new key
@@ -40,7 +41,7 @@
     # Encrypt?
     passphrase: "{{ key_passphrase | default(None, False) }}"
     # Where?
-    path: "{{ key_file }}"
+    path: "{{ server_key_file }}"
     # Allow deep tweaking; values below are the defaults and can be removed.
     curve: "{{ key_curve | default('secp256r1') }}"
     format: "{{ key_format | default('auto_ignore') }}"
@@ -49,12 +50,13 @@
     type: "{{ key_type | default('RSA') }}"
     # Docs say this "must be auto".
     cipher: auto
+  when: private_key.status != "exists"
     
 - name: Private key permissions and ownership
   ansible.builtin.file:
-    path: "{{ key_file }}"
+    path: "{{ server_key_file }}"
     mode: 'g=-,o=-'
     
 - name: Report
   ansible.builtin.debug:
-    msg: "Private key {{ private_key.status }} at {{ key_file }}"
+    msg: "Private key {{ private_key.status }} at {{ server_key_file }}"

@@ -1,5 +1,5 @@
 ---
-ca_config_dir: ~/local-ca-by-ansible"
+ca_config_dir: ~/local-ca-by-ansible
 
 # Root CA
 root_ca_dir: "{{ ca_config_dir }}/root-ca"
