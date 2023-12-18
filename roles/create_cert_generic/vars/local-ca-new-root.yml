@@ -10,6 +10,15 @@ server_cn: '{{ ca_cname | default("My one-off CA " + ansible_date_time.date) }}'
 cert_file: '{{ server_cert_file }}'
 # Overwrite cert file if it exists
 replace_cert_if_exists: '{{ overwrite | default(False) }}'
+# Key Usage
+cert_key_usage:
+  - "digitalSignature"
+  - "keyEncipherment"
+  - "keyCertSign"
+# Extended Key Usage
+cert_extended_key_usage:
+  - "clientAuth"
+  - "serverAuth"
 
 ### Private key vars
 # Private key file to create

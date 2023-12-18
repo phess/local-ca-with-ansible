@@ -1,0 +1,6 @@
+---
+## vars/main.yml
+
+
+# Reuse existing private keys
+use_existing_key: yes

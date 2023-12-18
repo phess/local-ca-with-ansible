@@ -1,83 +1,120 @@
 ---
-### Based on https://docs.ansible.com/ansible/latest/collections/community/crypto/docsite/guide_ownca.html
-- name: "Does the server cert exist at {{ server_cert_file }}?"
-  ansible.builtin.stat:
-    path: "{{ server_cert_file }}"
-  register: server_file_stat
+- import_role:
+    name: create_cert_generic
+    vars_from: local-ca-new-server-cert.yml
+    tasks_from: derive-basic-variables.yml
 
-- name: Set stat results
-  ansible.builtin.set_fact:
-    server_cert_file_exists: "{{ server_file_stat.stat.exists }}"
+- import_role:
+    name: create_cert_generic
+    vars_from: local-ca-new-server-cert.yml
+    tasks_from: find-chosen-ca.yml
 
-- name: "Ensure {{ server_cert_dir }} exists"
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-  loop:
-    - "{{ server_cert_dir }}"
-    - "{{ server_key_dir }}"
+- import_role:
+    name: create_cert_generic
+    vars_from: local-ca-new-server-cert.yml
+    tasks_from: generate-private-key.yml
 
-- name: "Create private key at {{ server_key_file }} for new certificate"
-  community.crypto.openssl_privatekey:
-    path: "{{ server_key_file }}"
-    # Always careful
-    backup: yes
-    force: no
-    # Encrypt?
-    passphrase: "{{ server_key_passphrase | default('', False) }}"
-    # Where?
-    path: "{{ server_key_file }}"
-    # Allow deep tweaking; values below are the defaults and can be removed.
-    curve: "{{ server_key_curve | default('secp256r1') }}"
-    format: "{{ server_key_format | default('auto_ignore') }}"
-    # Key generation parameters
-    size: "{{ server_key_size | default(4096) }}"
-    type: "{{ server_key_type | default('RSA') }}"
-    # Docs say this "must be auto".
-    cipher: auto
+- import_role:
+    name: create_cert_generic
+    vars_from: local-ca-new-server-cert.yml
+    tasks_from: generate-and-sign-cert.yml
 
-- name: Create certificate signing request (CSR) for new certificate
-  community.crypto.openssl_csr_pipe:
-    common_name: "{{ server_cert_name }}"
-    privatekey_path: "{{ server_key_file }}"
-    subject_alt_name: "{{ server_cert_cnames }}"
-    # Parameters beyond the bare minimum
-    create_subject_key_identifier: true
-    key_usage:
-      - Digital Signature
-    key_usage_critical: true
-    extended_key_usage:
-      - TLS Web Server Authentication
-      - TLS Web Client Authentication
-    #authority_key_identifier: "{{ server_cert_authority_key_identifier }}"
-    
-  register: server_cert_csr
 
-- name: Sign certificate with our CA
-  community.crypto.x509_certificate_pipe:
-    csr_content: "{{ server_cert_csr.csr }}"
-    provider: ownca
-    ownca_path: "{{ root_ca_cert_file }}"
-    ownca_privatekey_path: "{{ root_ca_key_file }}"
-    #ownca_privatekey_passphrase: "{{ secret_ca_passphrase }}"
-    ownca_not_after: +365d  # valid for one year
-    ownca_not_before: "-1d"  # valid since yesterday
-  register: certificate
-
-- name: "Write certificate file to {{ server_cert_file }}"
-  ansible.builtin.copy:
-    dest: "{{ server_cert_file }}"
-    content: "{{ certificate.certificate }}"
-
-- name: Place the CA bundle in the same dir as server certs
-  ansible.builtin.copy:
-    path: "{{ server_cert_dir }}/ca-bundle.pem"
-    content: "{{ lookup(ansible.builtin.file, item }}"
-  loop: CA_hierarchy
-  when: server_ca_cert != root_ca_cert_file
-
-- name: Place a copy of the CA cert in the same dir as server certs
-  ansible.builtin.copy:
-    path: "{{ server_cert_dir }}/ca-bundle.pem"
-    content: "{{ lookup(ansible.builtin.file, server_ca_cert }}"
-  when: server_ca_cert == root_ca_cert_file
+# 
+# 
+# ### Based on https://docs.ansible.com/ansible/latest/collections/community/crypto/docsite/guide_ownca.html
+# - name: "Does the server cert exist at {{ server_cert_file }}?"
+#   ansible.builtin.stat:
+#     path: "{{ server_cert_file }}"
+#   register: server_file_stat
+# 
+# - name: Set stat results
+#   ansible.builtin.set_fact:
+#     server_cert_file_exists: "{{ server_file_stat.stat.exists }}"
+# 
+# - name: "Ensure {{ server_cert_dir }} exists"
+#   ansible.builtin.file:
+#     path: "{{ item }}"
+#     state: directory
+#   loop:
+#     - "{{ server_cert_dir }}"
+#     - "{{ server_key_dir }}"
+# 
+# - name: "Create private key at {{ server_key_file }} for new certificate"
+#   community.crypto.openssl_privatekey:
+#     path: "{{ server_key_file }}"
+#     # Always careful
+#     backup: yes
+#     force: no
+#     # Encrypt?
+#     passphrase: "{{ server_key_passphrase | default('', False) }}"
+#     # Where?
+#     path: "{{ server_key_file }}"
+#     # Allow deep tweaking; values below are the defaults and can be removed.
+#     curve: "{{ server_key_curve | default('secp256r1') }}"
+#     format: "{{ server_key_format | default('auto_ignore') }}"
+#     # Key generation parameters
+#     size: "{{ server_key_size | default(4096) }}"
+#     type: "{{ server_key_type | default('RSA') }}"
+#     # Docs say this "must be auto".
+#     cipher: auto
+# 
+# - name: Build list of Subject Alternative Names
+#   ansible.builtin.set_fact:
+#     subject_alt_names: >
+#       [ {% for san_entry in server_cert_cnames %}
+#       {% if ':' in san_entry and san_entry.split(':',1)[0] in ('DNS', 'IP') %}
+#       "{{ san_entry }}"
+#       {% elif san_entry.replace('.', '').isdigit() %}
+#       "{{ 'IP:' + san_entry }}"
+#       {% else %}
+#       "{{ 'DNS:' + san_entry }}"
+#       {% endif %}
+#       {% endif %}
+#       ,{% endfor %} ]
+# 
+# - name: Create certificate signing request (CSR) for new certificate
+#   community.crypto.openssl_csr_pipe:
+#     common_name: "{{ server_cert_name }}"
+#     privatekey_path: "{{ server_key_file }}"
+#     subject_alt_name: "{{ server_cert_cnames }}"
+#     # Parameters beyond the bare minimum
+#     create_subject_key_identifier: true
+#     key_usage:
+#       - Digital Signature
+#     key_usage_critical: true
+#     extended_key_usage:
+#       - TLS Web Server Authentication
+#       - TLS Web Client Authentication
+#     #authority_key_identifier: "{{ server_cert_authority_key_identifier }}"
+#     
+#   register: server_cert_csr
+# 
+# - name: Sign certificate with our CA
+#   community.crypto.x509_certificate_pipe:
+#     csr_content: "{{ server_cert_csr.csr }}"
+#     provider: ownca
+#     ownca_path: "{{ root_ca_cert_file }}"
+#     ownca_privatekey_path: "{{ root_ca_key_file }}"
+#     #ownca_privatekey_passphrase: "{{ secret_ca_passphrase }}"
+#     ownca_not_after: +365d  # valid for one year
+#     ownca_not_before: "-1d"  # valid since yesterday
+#   register: certificate
+# 
+# - name: "Write certificate file to {{ server_cert_file }}"
+#   ansible.builtin.copy:
+#     dest: "{{ server_cert_file }}"
+#     content: "{{ certificate.certificate }}"
+# 
+# - name: Place the CA bundle in the same dir as server certs
+#   ansible.builtin.copy:
+#     path: "{{ server_cert_dir }}/ca-bundle.pem"
+#     content: "{{ lookup(ansible.builtin.file, item }}"
+#   loop: CA_hierarchy
+#   when: server_ca_cert != root_ca_cert_file
+# 
+# - name: Place a copy of the CA cert in the same dir as server certs
+#   ansible.builtin.copy:
+#     path: "{{ server_cert_dir }}/ca-bundle.pem"
+#     content: "{{ lookup(ansible.builtin.file, server_ca_cert }}"
+#   when: server_ca_cert == root_ca_cert_file

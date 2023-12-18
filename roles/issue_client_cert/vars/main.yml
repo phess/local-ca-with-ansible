@@ -1,0 +1,23 @@
+---
+# Root CA
+root_ca_dir: "{{ ca_config_dir }}/root-ca"
+root_ca_cert_file: "{{ root_ca_dir }}/root-ca-cert.pem"
+root_ca_key_file: "{{ root_ca_dir }}/root-ca-key.pem"
+
+# Server cert and key
+server_cert_name: ''
+server_cert_dir: "{{ ca_config_dir }}/certs/{{ server_cert_name }}"
+server_cert_file: "{{ server_cert_dir }}/{{ server_cert_name }}-cert.pem"
+server_cert_cnames:
+  # DO NOT FORGET THE "DNS:" PREFIX
+  - DNS:server1.example.com
+  - DNS:serverone.example.com
+  - DNS:myserver.example.com
+ 
+server_key_dir: "{{ server_cert_dir }}"
+server_key_file: "{{ server_key_dir }}/{{ server_cert_name }}-key.pem"
+
+# Blank and missing values for ``ca_to_use'' mean ca_is_root
+ca_to_use: "{{ root_ca_cert_file if ca_is_root else ca_name_or_file }}"
+
+#server_ca_cert: "{{ root_ca_cert_file }}"

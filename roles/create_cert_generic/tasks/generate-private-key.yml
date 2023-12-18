@@ -27,6 +27,15 @@
           exists
         {% endif %}
 
+- name: Remove spaces and newlines from private_key.status
+  ansible.builtin.set_fact:
+    private_key:
+      status: "{{ private_key.status.strip() }}"
+
+- name: Show private key status
+  ansible.builtin.debug:
+    var: private_key.status
+
 - name: "Ensure directory {{ server_cert_dir }} exists"
   ansible.builtin.file:
     path: "{{ server_cert_dir }}"

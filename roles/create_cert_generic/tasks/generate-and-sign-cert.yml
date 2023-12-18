@@ -1,5 +1,14 @@
 ---
 ### Based on https://docs.ansible.com/ansible/latest/collections/community/crypto/docsite/guide_ownca.html
+
+- name: All required variables set?
+  ansible.builtin.fail:
+    msg: "{{ item }} is not set. Please set it with -e {{ item }}='some_value'"
+  when: item|default("unset") == "unset"
+  loop:
+    - server_cn
+    - issuer_ca
+
 - name: Do we have a cert in place already?
   ansible.builtin.stat:
     path: "{{ server_cert_file }}"
@@ -53,7 +62,7 @@
     privatekey_path: '{{ server_key_file }}'
     basic_constraints:
       - 'CA:{{ is_ca | default(False) | upper }}'
-    common_name: '{{ server_cn | default("my-server.example.com") if is_server or is_client else server_cn | default("My CA") }}'
+    common_name: '{{ server_cn }}'
     ## Commenting this out as it causes subject_alt_name to be overwritten with ONLY the contents of common_name.
     #use_common_name_for_san: "{{ is_server or is_client }}"
     subject_alt_name: "{{ san_entries_as_string | default(omit) }}"
@@ -61,20 +70,8 @@
     basic_constraints:
       - 'CA:{{ is_ca | default(False) | upper }}'
     key_usage_critical: true
-    key_usage: >
-      [
-        "digitalSignature",
-        {% if is_ca %}
-          "keyEncipherment",
-        {% endif %}
-      ]
-    extended_key_usage: >
-      [
-        "clientAuth",
-        {% if is_server or is_ca %}
-          "serverAuth"
-        {% endif %}
-      ]
+    key_usage: "{{ cert_key_usage }}"
+    extended_key_usage: "{{ cert_extended_key_usage }}"
   register: csr
 
 - name: Generate a self-signed cert from CSR
