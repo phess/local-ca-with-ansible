@@ -9,7 +9,7 @@
 - name: "Stop now if key exists at {{ server_key_file }}"
   ansible.builtin.fail:
     msg: "Private key exists already at {{ server_key_file }}"
-  when: key_file_stat.stat.exists and not ( replace_key_if_exists or use_existing_key )
+  when: key_file_stat.stat.exists and not ( replace_key_if_exists|default(False) or use_existing_key|default(True) )
 
 - name: Set current private key status
   ansible.builtin.set_fact:
