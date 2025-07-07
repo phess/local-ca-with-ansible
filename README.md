@@ -46,7 +46,7 @@ $ find ~/local-ca
 ~/local-ca/root-ca/root-ca.key
 ```
 
-## 4. Geneate a new certificate and key for your server/service
+## 4. Generate a new certificate and key for your server/service
 
 The example below generates a certificate for the my-nice-server.example.com hostname, with my-nice-server and load-balancer.example.com added to the SAN (Subject Alternative Names) section:
 ```
