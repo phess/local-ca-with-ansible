@@ -28,8 +28,8 @@
     # Cert is NOT self-signed but signed by the root CA
     self_sign: false
     # CA private key and cert files are the root CA's
-    local_ca_cert_file: '{{ local_ca_path }}/root-ca/root-ca.crt'
-    local_ca_key_file: '{{ local_ca_path }}/root-ca/root-ca.key'
+    local_ca_cert_file: '{{ local_ca_path }}/root-ca/{{ root_ca_filename }}'
+    local_ca_key_file: '{{ local_ca_path }}/root-ca/{{ root_ca_filename_key }}'
 
   roles:
     - create_cert_generic
