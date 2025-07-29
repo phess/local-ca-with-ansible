@@ -12,7 +12,7 @@ Install them with:
 $ ansible-galaxy collection install -r requirements.txt
 ~~~
 
-## 2. Before generating your root CA cert, carefully eview the `lecal-ca.conf` (for RSA-based CAs -- most users) or `local-ca-ECC.conf` (for Elliptic Curve-based CAs) file; this is your local CA _config file_!
+## 2. Before generating your root CA cert, carefully review the `local-ca.conf` (for RSA-based CAs -- most users) or `local-ca-ECC.conf` (for Elliptic Curve-based CAs) file; this is your local CA _config file_!
 
 **WARNING** If you change any setting in this file, you are strongly advised to re-generate your root CA entirely. Your existing root CA may stop working otherwise.
 
