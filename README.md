@@ -4,6 +4,12 @@ Ansible roles and playbooks to build and run a local CA and issue/revoke certs
 
 # How to use
 
+## 0. Clone this repo
+
+~~~
+$ git clone https://github.com/phess/local-ca-with-ansible.git
+~~~
+
 ## 1. Install required Ansible collections
 
 Required Ansible collections are in `requirements.txt`.
